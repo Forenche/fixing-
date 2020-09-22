@@ -1,0 +1,2 @@
+on boot
+    write /proc/touchpanel/double_tap_enable 1

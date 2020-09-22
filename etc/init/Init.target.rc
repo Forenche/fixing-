@@ -1,0 +1,31 @@
+on post-fs-data
+    chown system system /sys/class/power_supply/battery/input_suspend
+#on boot
+#    insmod /system/lib/modules/adsprpc.ko
+#    insmod /system/lib/modules/mhi.ko
+## access permission for secure touch
+#    chmod 0660 /sys/devices/f9966000.i2c/i2c-1/1-004a/secure_touch_enable
+#    chmod 0440 /sys/devices/f9966000.i2c/i2c-1/1-004a/secure_touch
+#    chmod 0660 /sys/devices/f9966000.i2c/i2c-1/1-0020/secure_touch_enable
+#    chmod 0440 /sys/devices/f9966000.i2c/i2c-1/1-0020/secure_touch
+#    chown system drmrpc /sys/devices/f9966000.i2c/i2c-1/1-004a/secure_touch_enable
+#    chown system drmrpc /sys/devices/f9966000.i2c/i2c-1/1-004a/secure_touch
+#    chown system drmrpc /sys/devices/f9966000.i2c/i2c-1/1-0020/secure_touch_enable
+#    chown system drmrpc /sys/devices/f9966000.i2c/i2c-1/1-0020/secure_touch
+#
+#
+# For cpusets initialize for Silver Only first and then Silver + Gold
+# Silver Only configuration cannot work with 0-7
+on boot
+    chown system system /sys/kernel/hbtp/display_pwr
+    start rmt_storage
+    start rfs_access
+    write /dev/cpuset/top-app/cpus 0-7
+    write /dev/cpuset/foreground/cpus 0-7
+    write /dev/cpuset/foreground/boost/cpus 0-7
+    write /dev/cpuset/background/cpus 0-7
+    write /dev/cpuset/system-background/cpus 0-7
+    # OTG
+    write /sys/class/power_supply/usb/otg_switch 1
+    # update touchscreen firmware on boot
+    write /proc/touchpanel/tp_fw_update 1
