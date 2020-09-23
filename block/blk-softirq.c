@@ -59,7 +59,7 @@ static void trigger_softirq(void *data)
 static int raise_blk_irq(int cpu, struct request *rq)
 {
 	if (cpu_online(cpu)) {
-		call_single_data_t *data = &rq->csd;
+		struct call_single_data *data = &rq->csd;
 
 		data->func = trigger_softirq;
 		data->info = rq;
@@ -107,13 +107,8 @@ void __blk_complete_request(struct request *req)
 
 	/*
 	 * Select completion CPU
-	 *
-	 * Refrain from waking up an idle CPU if possible since the exit
-	 * latency of taking req->cpu out of an idle cstate will likely
-	 * exceed the rq->deadline constraint compared to executing the
-	 * request locally instead.
 	 */
-	if (req->cpu != -1 && !idle_cpu(req->cpu)) {
+	if (req->cpu != -1) {
 		ccpu = req->cpu;
 		if (!test_bit(QUEUE_FLAG_SAME_FORCE, &q->queue_flags))
 			shared = cpus_share_cache(cpu, ccpu);

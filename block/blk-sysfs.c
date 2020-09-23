@@ -94,50 +94,7 @@ queue_ra_store(struct request_queue *q, const char *page, size_t count)
 
 	return ret;
 }
-#ifdef VENDOR_EDIT
-/*Huacai.Zhou@PSW.BSP.Kernel.Performance, 2018-04-28, add foreground task io opt*/
-static ssize_t queue_fgio_show(struct request_queue *q, char *page)
-{
-	int cnt = q->fg_count_max;
 
-	return queue_var_show(cnt, (page));
-}
-
-static ssize_t
-queue_fgio_store(struct request_queue *q, const char *page, size_t count)
-{
-	unsigned long cnt;
-	ssize_t ret = queue_var_store(&cnt, page, count);
-
-	if (ret < 0)
-		return ret;
-
-	q->fg_count_max= cnt;
-
-	return ret;
-}
-static ssize_t queue_bothio_show(struct request_queue *q, char *page)
-{
-	int cnt = q->both_count_max;
-
-	return queue_var_show(cnt, (page));
-}
-
-static ssize_t
-queue_bothio_store(struct request_queue *q, const char *page, size_t count)
-{
-	unsigned long cnt;
-	ssize_t ret = queue_var_store(&cnt, page, count);
-
-	if (ret < 0)
-		return ret;
-
-	q->both_count_max= cnt;
-
-	return ret;
-}
-
-#endif /*VENDOR_EDIT*/
 static ssize_t queue_max_sectors_show(struct request_queue *q, char *page)
 {
 	int max_sectors_kb = queue_max_sectors(q) >> 1;
@@ -298,7 +255,7 @@ queue_store_##name(struct request_queue *q, const char *page, size_t count) \
 
 QUEUE_SYSFS_BIT_FNS(nonrot, NONROT, 1);
 QUEUE_SYSFS_BIT_FNS(random, ADD_RANDOM, 0);
-QUEUE_SYSFS_BIT_FNS(iostats, IO_STAT, 1);
+QUEUE_SYSFS_BIT_FNS(iostats, IO_STAT, 0);
 #undef QUEUE_SYSFS_BIT_FNS
 
 static ssize_t queue_nomerges_show(struct request_queue *q, char *page)
@@ -360,28 +317,6 @@ queue_rq_affinity_store(struct request_queue *q, const char *page, size_t count)
 	}
 	spin_unlock_irq(q->queue_lock);
 #endif
-	return ret;
-}
-
-static ssize_t queue_poll_delay_show(struct request_queue *q, char *page)
-{
-	return queue_var_show(q->poll_nsec / 1000, page);
-}
-
-static ssize_t queue_poll_delay_store(struct request_queue *q, const char *page,
-				size_t count)
-{
-	unsigned long poll_usec;
-	ssize_t ret;
-
-	if (!q->mq_ops || !q->mq_ops->poll)
-		return -EINVAL;
-
-	ret = queue_var_store(&poll_usec, page, count);
-	if (ret < 0)
-		return ret;
-
-	q->poll_nsec = poll_usec * 1000;
 	return ret;
 }
 
@@ -461,20 +396,7 @@ static struct queue_sysfs_entry queue_ra_entry = {
 	.show = queue_ra_show,
 	.store = queue_ra_store,
 };
-#ifdef VENDOR_EDIT
-/*Huacai.Zhou@PSW.BSP.Kernel.Performance, 2018-04-28, add foreground task io opt*/
-static struct queue_sysfs_entry queue_fgio_entry = {
-	.attr = {.name = "fg_io_cnt_max", .mode = S_IRUGO | S_IWUSR },
-	.show = queue_fgio_show,
-	.store = queue_fgio_store,
-};
-static struct queue_sysfs_entry queue_bothio_entry = {
-	.attr = {.name = "both_io_cnt_max", .mode = S_IRUGO | S_IWUSR },
-	.show = queue_bothio_show,
-	.store = queue_bothio_store,
-};
 
-#endif /*VENDOR_EDIT*/
 static struct queue_sysfs_entry queue_max_sectors_entry = {
 	.attr = {.name = "max_sectors_kb", .mode = S_IRUGO | S_IWUSR },
 	.show = queue_max_sectors_show,
@@ -577,7 +499,7 @@ static struct queue_sysfs_entry queue_rq_affinity_entry = {
 };
 
 static struct queue_sysfs_entry queue_iostats_entry = {
-	.attr = {.name = "iostats", .mode = S_IRUGO | S_IRUSR },
+	.attr = {.name = "iostats", .mode = S_IRUGO | S_IWUSR },
 	.show = queue_show_iostats,
 	.store = queue_store_iostats,
 };
@@ -594,12 +516,6 @@ static struct queue_sysfs_entry queue_poll_entry = {
 	.store = queue_poll_store,
 };
 
-static struct queue_sysfs_entry queue_poll_delay_entry = {
-	.attr = {.name = "io_poll_delay", .mode = S_IRUGO | S_IWUSR },
-	.show = queue_poll_delay_show,
-	.store = queue_poll_delay_store,
-};
-
 static struct queue_sysfs_entry queue_wc_entry = {
 	.attr = {.name = "write_cache", .mode = S_IRUGO | S_IWUSR },
 	.show = queue_wc_show,
@@ -614,11 +530,6 @@ static struct queue_sysfs_entry queue_dax_entry = {
 static struct attribute *default_attrs[] = {
 	&queue_requests_entry.attr,
 	&queue_ra_entry.attr,
-#ifdef VENDOR_EDIT
-/*Huacai.Zhou@PSW.BSP.Kernel.Performance, 2018-04-28, add foreground task io opt*/
-	&queue_fgio_entry.attr,
-	&queue_bothio_entry.attr,
-#endif /*VENDOR_EDIT*/
 	&queue_max_hw_sectors_entry.attr,
 	&queue_max_sectors_entry.attr,
 	&queue_max_segments_entry.attr,
@@ -643,7 +554,6 @@ static struct attribute *default_attrs[] = {
 	&queue_poll_entry.attr,
 	&queue_wc_entry.attr,
 	&queue_dax_entry.attr,
-	&queue_poll_delay_entry.attr,
 	NULL,
 };
 
